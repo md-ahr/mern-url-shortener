@@ -5,7 +5,8 @@ const validateUrl = require('../utils/validateUrl');
 const getAllUrl = async (req, res) => {
     Url.find((error, data) => {
         if (error) return next(error);
-        res.json(data);
+        if (data.length === 0) return res.json({ isSuccess: false, message: `No url found!` });
+        res.json({ isSuccess: true, total: data.length, urls: data });
     });
 };
 
@@ -17,11 +18,10 @@ const getUrlById = async (req, res) => {
             url.save();
             return res.redirect(url.originalUrl);
         } else {
-            res.status(404).json('Not found');
+            res.status(404).json({ isSuccess: false, message: `No url found with this urlId - ${req.params.urlId}!` });
         }
     } catch (err) {
-        console.log(err);
-        res.status(500).json('Server Error');
+        res.status(500).json({ isSuccess: false, message: `Server error - ${err}!` });
     }
 };
 
@@ -41,14 +41,13 @@ const getShortUrl = async (req, res) => {
                     urlId
                 });
                 await url.save();
-                res.json(url);
+                res.json({ isSuccess: true, url });
             }
         } catch (err) {
-            console.log(err);
-            res.status(500).json('Server Error');
+            res.status(500).json({ isSuccess: false, message: `Server error - ${err}!` });
         }
     } else {
-        res.status(400).json('Invalid Original Url');
+        res.status(400).json({ isSuccess: false, message: 'Invalid original url!' });
     }
 };
 
