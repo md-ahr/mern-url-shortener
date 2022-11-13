@@ -1,17 +1,16 @@
-import axios from "axios";
-import { useState, SyntheticEvent, useRef } from "react";
+import axios from 'axios';
+import { useState, SyntheticEvent, useRef, useContext } from 'react';
+import { DataContext, DataDispatchContext } from '../context/DataContext';
 
 const AddUrl = () => {
   const [url, setUrl] = useState('');
   const [isValidUrl, setIsValidUrl] = useState(true);
   const [showShortUrl, setShowShortUrl] = useState(false);
-  const [resData, setResData] = useState({
-    urlId: '',
-    originalUrl: '',
-    shortUrl: '',
-  });
 
   const btnRef: any = useRef();
+
+  const urls = useContext(DataContext) || {};
+  const dispatch = useContext(DataDispatchContext);
 
   const handleUrlChange = (e: any) => {
     setUrl(e.target.value);
@@ -22,28 +21,26 @@ const AddUrl = () => {
     }
   }
 
-  const getUrls = async () => await axios.get('/urls/all');
-
   const generateShortUrl = async () => {
     const response = await axios.post('/urls/short', { originalUrl: url });
-    const { data }  = response || {};
-    if (Object.keys(data).length > 0) {
-      setResData(data);
-      getUrls();
+    const { data }  = await response || {};
+    return data;
+  }
+
+  const handleSubmit = async (e: SyntheticEvent) => {
+    e.preventDefault();
+    const { isSuccess, url } = await generateShortUrl();
+    if (isSuccess) {
+      dispatch({ type: 'GENERATE_URL', value: url });
       setShowShortUrl(true);
     } else {
       setShowShortUrl(false);
     }
-  }
-
-  const handleSubmit = (e: SyntheticEvent) => {
-    e.preventDefault();
-    generateShortUrl();
     setUrl('');
   }
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(resData.shortUrl);
+    navigator.clipboard.writeText(urls.urls[0].shortUrl);
     btnRef.current.textContent = 'Copied';
     btnRef.current.style.backgroundColor = '#20cf6f';
   }
@@ -74,7 +71,7 @@ const AddUrl = () => {
         </div>
       </form>
       {showShortUrl && (
-        <div className="py-4 text-center border-t bg-slate-100">{resData.shortUrl}
+        <div className="py-4 text-center border-t bg-slate-100">{urls.urls[0].shortUrl}
           <button
             type="button"
             className="ml-4 px-4 py-2 text-sm border rounded text-white bg-slate-600"
